@@ -1,8 +1,11 @@
 # 🌤️ Taiwan Weather Forecast (台灣天氣預報互動式應用)
 
-> **AI 創新微課程：從氣象資料到互動式天氣預報應用**  
-> **技術棧**：CWA API × JSON × Python × SQLite × Streamlit × Folium  
-> **實作思維**：Vibe Coding (自然語言對話 → AI 規劃架構 → 逐步實作與測試)
+> 🌐 **即時線上體驗網址 (Live Demo)**：**[https://greg-design-their-jon.trycloudflare.com](https://greg-design-their-jon.trycloudflare.com)**  
+> 📦 **GitHub 專案倉庫**：**[https://github.com/stevenwujr/0923testproject](https://github.com/stevenwujr/0923testproject)**  
+> 
+> 🎓 **AI 創新微課程：從氣象資料到互動式天氣預報應用**  
+> 🛠️ **核心技術棧**：CWA API × JSON × Python × SQLite × Streamlit × Folium  
+> 🤖 **開發實作思維**：Vibe Coding (自然語言對話 → AI 規劃架構 → 逐步實作與測試)
 
 ---
 
