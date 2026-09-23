@@ -83,6 +83,39 @@ python -m streamlit run app.py
 ```
 啟動後，瀏覽器將自動開啟 `http://localhost:8501`。
 
+### FastAPI + Windy 觀測站 MVP
+
+本專案另包含符合設計文件的 FastAPI 版本，入口為 `backend/app/main.py`，首頁為 `backend/static/index.html`。
+
+在專案根目錄執行：
+
+```bash
+python -m uvicorn backend.app.main:app --reload --port 8000
+```
+
+開啟 `http://localhost:8000` 後，可使用台灣地圖、CWA 站點溫度標記、popup、溫度圖例、手動刷新、縣市篩選與站點標籤。設定有效的 `CWA_API_KEY` 後，後端會從 `CWA_DATA_URL` 取得觀測資料；未設定或上游失敗時會顯示內建示範資料並標示 `stale`，因此展示不會因外部服務中斷而崩潰。
+
+### Cloudflare 公開分享
+
+先確認 `.env` 已放在專案根目錄，再雙擊 `start_public_share.bat`。腳本會啟動 FastAPI `8000`，並將 Cloudflare tunnel 指向同一個服務；終端機顯示的 `trycloudflare.com` 網址就是新版觀測站頁面。Quick Tunnel 網址是臨時網址，每次重新啟動可能不同。
+
+PowerShell 環境變數範例：
+
+```powershell
+$env:CWA_API_KEY = "your_cwa_api_key"
+$env:WINDY_API_KEY = "your_windy_api_key"
+python -m uvicorn backend.app.main:app --reload --port 8000
+```
+
+後端 API：
+
+- `GET /api/temperature/latest`：最新正規化站點資料
+- `GET /api/temperature/geojson`：Leaflet/GeoJSON 資料
+- `GET /api/temperature/stations/{station_id}`：單站詳細資料
+- `GET /api/health`：服務健康狀態
+
+有 `WINDY_API_KEY` 且目前網域已在 Windy 後台授權時，前端會初始化 Windy Map Forecast API；本機 `localhost` / `127.0.0.1` 預設使用 OpenStreetMap，避免未授權網域造成頁面錯誤。部署時請將正式網域加入 Windy API key 的 allowed domains。CWA 金鑰只在後端環境變數中使用，不會回傳給瀏覽器。
+
 ### 3. 執行自動化測試
 驗證整個氣象資料處理管線與 SQLite 冪等性：
 ```bash

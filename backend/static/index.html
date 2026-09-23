@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CWA Temperature Broadcast</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css"
+      crossorigin=""
+    />
+    <style>
+      body {
+        margin: 0;
+        font-family: "Segoe UI", "Noto Sans TC", sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        background: rgba(15, 23, 42, 0.95);
+        border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+      }
+      .title {
+        font-size: 1.2rem;
+        font-weight: 700;
+      }
+      .status { color: #7dd3fc; }
+      .status.stale { color: #fbbf24; }
+      .layout {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        min-height: calc(100vh - 73px);
+      }
+      #windy {
+        width: 100%;
+        height: calc(100vh - 73px);
+      }
+      .sidebar {
+        background: #111827;
+        border-left: 1px solid rgba(148, 163, 184, 0.2);
+        padding: 1rem;
+      }
+      .panel {
+        background: rgba(30, 41, 59, 0.9);
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        border-radius: 12px;
+        padding: 0.9rem;
+        margin-bottom: 1rem;
+      }
+      h3 { margin-top: 0; }
+      button, select { width: 100%; padding: 0.55rem; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #e2e8f0; }
+      button { cursor: pointer; margin-bottom: 0.7rem; background: #0369a1; border-color: #0284c7; }
+      label { display: block; margin: 0.55rem 0; font-size: 0.9rem; }
+      .legend { display: grid; gap: 0.45rem; font-size: 0.9rem; }
+      .legend-item { display: flex; align-items: center; gap: 0.5rem; }
+      .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+      .station-list { max-height: 480px; overflow-y: auto; }
+      .station-item {
+        padding: 0.5rem 0.6rem;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        cursor: pointer;
+      }
+      .station-item:hover { background: rgba(148, 163, 184, 0.08); }
+      .temp { font-weight: 700; }
+      .station-label { background: transparent; border: 0; color: #111827; font-weight: 700; text-shadow: 0 0 3px #fff; white-space: nowrap; }
+      @media (max-width: 900px) {
+        .layout { grid-template-columns: 1fr; }
+        #windy { height: 60vh; }
+        .sidebar { border-left: none; border-top: 1px solid rgba(148, 163, 184, 0.2); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <div class="title">CWA Temperature Broadcast</div>
+      <div class="status">Last CWA update: <span id="updatedAt">Loading...</span></div>
+    </div>
+    <div class="layout">
+      <div id="windy"></div>
+      <aside class="sidebar">
+        <div class="panel">
+          <h3>Controls</h3>
+          <button id="refreshButton" type="button">Refresh CWA data</button>
+          <label><input id="cwaToggle" type="checkbox" checked /> Show CWA stations</label>
+          <label><input id="labelToggle" type="checkbox" /> Show station labels</label>
+          <label for="overlaySelect">Windy background</label>
+          <select id="overlaySelect">
+            <option value="wind">Wind</option>
+            <option value="temp">Temperature</option>
+            <option value="rain">Rain</option>
+            <option value="clouds">Clouds</option>
+          </select>
+          <label for="countySelect">County filter</label>
+          <select id="countySelect"><option value="all">All counties</option></select>
+        </div>
+        <div class="panel">
+          <h3>Legend</h3>
+          <div class="legend">
+            <div class="legend-item"><span class="dot" style="background:#2b6cb0"></span> &lt; 10°C</div>
+            <div class="legend-item"><span class="dot" style="background:#3182ce"></span> 10–15°C</div>
+            <div class="legend-item"><span class="dot" style="background:#38a169"></span> 15–20°C</div>
+            <div class="legend-item"><span class="dot" style="background:#ecc94b"></span> 20–25°C</div>
+            <div class="legend-item"><span class="dot" style="background:#ed8936"></span> 25–30°C</div>
+            <div class="legend-item"><span class="dot" style="background:#e53e3e"></span> 30–35°C</div>
+            <div class="legend-item"><span class="dot" style="background:#9b2c2c"></span> &gt; 35°C</div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Station list</h3>
+          <div id="stationList" class="station-list"></div>
+        </div>
+      </aside>
+    </div>
+
+    <script
+      src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"
+      crossorigin=""
+    ></script>
+    <script>
+      let map;
+      let windyApi;
+      const cwaLayer = L.layerGroup();
+      const labelLayer = L.layerGroup();
+      let stations = [];
+
+      function colorByTemperature(temp) {
+        if (temp < 10) return '#2b6cb0';
+        if (temp < 15) return '#3182ce';
+        if (temp < 20) return '#38a169';
+        if (temp < 25) return '#ecc94b';
+        if (temp < 30) return '#ed8936';
+        if (temp < 35) return '#e53e3e';
+        return '#9b2c2c';
+      }
+
+      function getRadius(temp) {
+        return Math.max(6, 7 + temp / 5);
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>'"]/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+      }
+
+      async function initMap() {
+        function initFallbackMap() {
+          const container = document.getElementById('windy');
+          container.innerHTML = '';
+          map = L.map('windy', { zoomControl: true }).setView([23.7, 121.0], 7);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+          document.getElementById('overlaySelect').disabled = true;
+        }
+
+        const config = await fetch('/api/config').then((response) => response.json());
+        const localHost = ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+        if (config.windy_api_key && !config.windy_api_key.startsWith('your_') && !localHost) {
+          try {
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://api.windy.com/assets/map-forecast/libBoot.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+          });
+          await new Promise((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error('Windy initialization timed out')), 8000);
+            if (typeof windyInit !== 'function') {
+              reject(new Error('Windy API failed to load'));
+              return;
+            }
+            windyInit({ key: config.windy_api_key, lat: 23.7, lon: 121, zoom: 7, overlay: 'wind' }, (api) => {
+              clearTimeout(timer);
+              windyApi = api;
+              map = api.map;
+              resolve();
+            });
+          });
+          } catch (error) {
+            console.warn(error);
+            initFallbackMap();
+          }
+        } else {
+          initFallbackMap();
+        }
+        cwaLayer.addTo(map);
+        labelLayer.addTo(map);
+      }
+
+      async function loadLatestData() {
+        const response = await fetch('/api/temperature/latest');
+        if (!response.ok) throw new Error('Failed to load CWA data');
+        const data = await response.json();
+        const status = document.getElementById('updatedAt');
+        status.textContent = `${new Date(data.updated_at).toLocaleString('zh-TW')} (${data.status})`;
+        status.parentElement.classList.toggle('stale', data.status !== 'fresh');
+        stations = data.stations;
+        cwaLayer.clearLayers();
+        labelLayer.clearLayers();
+
+        const stationList = document.getElementById('stationList');
+        stationList.innerHTML = '';
+        const countySelect = document.getElementById('countySelect');
+        const currentCounty = countySelect.value;
+        countySelect.innerHTML = '<option value="all">All counties</option>';
+        [...new Set(stations.map((station) => station.county).filter(Boolean))].sort().forEach((county) => {
+          countySelect.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(county)}">${escapeHtml(county)}</option>`);
+        });
+        countySelect.value = [...countySelect.options].some((option) => option.value === currentCounty) ? currentCounty : 'all';
+
+        stations.filter((station) => countySelect.value === 'all' || station.county === countySelect.value).forEach((station) => {
+          const marker = L.circleMarker([station.lat, station.lon], {
+            radius: getRadius(station.temperature_c),
+            fillColor: colorByTemperature(station.temperature_c),
+            fillOpacity: 0.8,
+            color: '#ffffff',
+            weight: 1
+          });
+
+          marker.bindPopup(`
+            <strong>${escapeHtml(station.station_name)}</strong><br/>
+            ${escapeHtml(station.county)} ${escapeHtml(station.town)}<br/>
+            Temperature: ${station.temperature_c}°C<br/>
+            Humidity: ${station.humidity_percent ?? '-'}%<br/>
+            Wind: ${station.wind_speed_mps ?? '-'} m/s<br/>
+            Time: ${station.observed_at}
+          `);
+          marker.addTo(cwaLayer);
+          L.marker([station.lat, station.lon], { icon: L.divIcon({ className: 'station-label', html: `${escapeHtml(station.station_name)} ${station.temperature_c}°C`, iconSize: [100, 20] }) }).addTo(labelLayer);
+
+          const item = document.createElement('div');
+          item.className = 'station-item';
+          item.innerHTML = `<div><strong>${escapeHtml(station.station_name)}</strong> <span class="temp">${station.temperature_c}°C</span></div><div>${escapeHtml(station.county)} / ${escapeHtml(station.town)}</div>`;
+          item.addEventListener('click', () => {
+            map.flyTo([station.lat, station.lon], 9, { duration: 1 });
+            marker.openPopup();
+          });
+          stationList.appendChild(item);
+        });
+      }
+
+      document.getElementById('cwaToggle').addEventListener('change', (event) => {
+        if (event.target.checked) cwaLayer.addTo(map); else map.removeLayer(cwaLayer);
+      });
+      document.getElementById('labelToggle').addEventListener('change', (event) => {
+        if (event.target.checked) labelLayer.addTo(map); else map.removeLayer(labelLayer);
+      });
+      document.getElementById('countySelect').addEventListener('change', () => loadLatestData());
+      document.getElementById('refreshButton').addEventListener('click', () => loadLatestData());
+      document.getElementById('overlaySelect').addEventListener('change', (event) => {
+        if (windyApi) windyApi.store.set('overlay', event.target.value);
+      });
+
+      initMap().then(() => loadLatestData()).catch((error) => {
+        console.error(error);
+        document.getElementById('updatedAt').textContent = 'Unavailable';
+      });
+      setInterval(loadLatestData, 300000);
+    </script>
+  </body>
+</html>
