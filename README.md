@@ -7,6 +7,8 @@
 > 🛠️ **核心技術棧**：CWA API × JSON × Python × SQLite × Streamlit × Folium  
 > 🤖 **開發實作思維**：Vibe Coding (自然語言對話 → AI 規劃架構 → 逐步實作與測試)
 
+![Taiwan Weather Dashboard](weather-dashboard.png)
+
 ---
 
 ## 📖 專案簡介
