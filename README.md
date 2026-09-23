@@ -1,6 +1,6 @@
 # 🌤️ Taiwan Weather Forecast (台灣天氣預報互動式應用)
 
-> 🌐 **永久線上網址 (Live Demo)**：Render 部署完成後，請將平台提供的網址填入此處。  
+> 🌐 **永久線上網址 (Live Demo)**：**[https://taiwan-weather-dashboard-rjpb.onrender.com](https://taiwan-weather-dashboard-rjpb.onrender.com)**
 > 📦 **GitHub 專案倉庫**：**[https://github.com/stevenwujr/0923testproject](https://github.com/stevenwujr/0923testproject)**  
 > 
 > 🎓 **AI 創新微課程：從氣象資料到互動式天氣預報應用**  
