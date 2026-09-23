@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: taiwan-weather-dashboard
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: CWA_API_KEY
+        sync: false
+      - key: CWA_DATA_URL
+        value: https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0003-001
+      - key: CACHE_TTL_SECONDS
+        value: "600"
+      - key: WINDY_API_KEY
+        sync: false

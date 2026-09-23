@@ -2,11 +2,16 @@ import os
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
-import truststore
+
+try:
+    import truststore
+except ModuleNotFoundError:
+    truststore = None
 
 
 load_dotenv()
-truststore.inject_into_ssl()
+if truststore is not None:
+    truststore.inject_into_ssl()
 
 
 @dataclass

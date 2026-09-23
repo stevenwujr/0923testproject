@@ -12,12 +12,15 @@ import os
 import json
 import requests
 import urllib3
+from dotenv import load_dotenv
 
 # 關閉 SSL 不安全連線警告 (確保在各 Windows Python 環境連線順暢)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# 使用作業指定之 CWA API Key
-API_KEY = "CWA-55FDA6D3-A43C-4AE0-BB30-E62D5F684FB2"
+load_dotenv()
+
+# Keep credentials in the environment instead of source control.
+API_KEY = os.getenv("CWA_API_KEY", "")
 DATASET_ID = "F-D0047-091"  # 臺灣各區一週天氣預報
 URL = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/{DATASET_ID}"
 OUTPUT_FILE = "weather_data.json"

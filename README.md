@@ -1,6 +1,6 @@
 # 🌤️ Taiwan Weather Forecast (台灣天氣預報互動式應用)
 
-> 🌐 **即時線上體驗網址 (Live Demo)**：**[https://greg-design-their-jon.trycloudflare.com](https://greg-design-their-jon.trycloudflare.com)**  
+> 🌐 **永久線上網址 (Live Demo)**：Render 部署完成後，請將平台提供的網址填入此處。  
 > 📦 **GitHub 專案倉庫**：**[https://github.com/stevenwujr/0923testproject](https://github.com/stevenwujr/0923testproject)**  
 > 
 > 🎓 **AI 創新微課程：從氣象資料到互動式天氣預報應用**  
@@ -92,6 +92,18 @@ python -m streamlit run app.py
 ```bash
 python -m uvicorn backend.app.main:app --reload --port 8000
 ```
+
+### GitHub push 後自動部署（永久網址）
+
+專案已附上 `render.yaml`，可使用 Render 從 GitHub 自動部署新版 FastAPI 觀測站：
+
+1. 開啟 [Render](https://render.com/)，使用 GitHub 登入。
+2. 選擇 **New + → Blueprint**，連結 `stevenwujr/0923testproject`。
+3. Render 會讀取 `render.yaml`，建立 Web Service。
+4. 在 Render 的 Environment 設定 `CWA_API_KEY`；`WINDY_API_KEY` 沒有使用需求時可留空。
+5. 部署完成後取得 Render 網址，例如 `https://taiwan-weather-dashboard.onrender.com`。
+
+之後只要執行 `git push`，Render 就會自動重新部署。免費方案可能在一段時間沒有流量後休眠，第一次開啟時需要等待幾秒；若需要真正不休眠的服務，請改用付費方案。CWA API 金鑰只應設定在 Render Environment，不要寫進程式碼或提交 `.env`。
 
 開啟 `http://localhost:8000` 後，可使用台灣地圖、CWA 站點溫度標記、popup、溫度圖例、手動刷新、縣市篩選與站點標籤。設定有效的 `CWA_API_KEY` 後，後端會從 `CWA_DATA_URL` 取得觀測資料；未設定或上游失敗時會顯示內建示範資料並標示 `stale`，因此展示不會因外部服務中斷而崩潰。
 
