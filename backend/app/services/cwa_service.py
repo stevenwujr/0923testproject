@@ -8,19 +8,33 @@ from typing import Any
 from src.cwa_api import load_sample_data, parse_weather_json
 from backend.app.config import settings
 import requests
+import urllib3
 
 DATA_DIR = Path(__file__).resolve().parents[3] / "data"
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 STATION_TEMPLATE = [
     {"station_id": "466920", "station_name": "臺北", "county": "臺北市", "town": "中正區", "lat": 25.0377, "lon": 121.5149, "region": "北部地區"},
+    {"station_id": "466900", "station_name": "板橋", "county": "新北市", "town": "板橋區", "lat": 25.0143, "lon": 121.4637, "region": "北部地區"},
+    {"station_id": "466880", "station_name": "桃園", "county": "桃園市", "town": "桃園區", "lat": 24.9941, "lon": 121.3010, "region": "北部地區"},
     {"station_id": "466883", "station_name": "新竹", "county": "新竹縣", "town": "竹北市", "lat": 24.8294, "lon": 121.0055, "region": "北部地區"},
+    {"station_id": "C01", "station_name": "新竹市", "county": "新竹市", "town": "東區", "lat": 24.8138, "lon": 120.9675, "region": "北部地區"},
+    {"station_id": "466940", "station_name": "苗栗", "county": "苗栗縣", "town": "苗栗市", "lat": 24.5602, "lon": 120.8214, "region": "中部地區"},
     {"station_id": "467050", "station_name": "臺中", "county": "臺中市", "town": "西區", "lat": 24.1477, "lon": 120.6736, "region": "中部地區"},
+    {"station_id": "467270", "station_name": "彰化", "county": "彰化縣", "town": "彰化市", "lat": 24.0756, "lon": 120.5440, "region": "中部地區"},
+    {"station_id": "467210", "station_name": "南投", "county": "南投縣", "town": "南投市", "lat": 23.9157, "lon": 120.6639, "region": "中部地區"},
+    {"station_id": "467770", "station_name": "雲林", "county": "雲林縣", "town": "斗六市", "lat": 23.7092, "lon": 120.4313, "region": "中部地區"},
     {"station_id": "467490", "station_name": "嘉義", "county": "嘉義市", "town": "東區", "lat": 23.4800, "lon": 120.4495, "region": "南部地區"},
+    {"station_id": "467530", "station_name": "嘉義縣", "county": "嘉義縣", "town": "太保市", "lat": 23.4592, "lon": 120.3329, "region": "南部地區"},
     {"station_id": "467410", "station_name": "臺南", "county": "臺南市", "town": "中西區", "lat": 22.9937, "lon": 120.2017, "region": "南部地區"},
     {"station_id": "467440", "station_name": "高雄", "county": "高雄市", "town": "前金區", "lat": 22.6273, "lon": 120.3013, "region": "南部地區"},
+    {"station_id": "467550", "station_name": "屏東", "county": "屏東縣", "town": "屏東市", "lat": 22.6710, "lon": 120.4880, "region": "南部地區"},
     {"station_id": "466990", "station_name": "花蓮", "county": "花蓮縣", "town": "花蓮市", "lat": 23.9769, "lon": 121.6064, "region": "東部地區"},
     {"station_id": "467080", "station_name": "宜蘭", "county": "宜蘭縣", "town": "宜蘭市", "lat": 24.7576, "lon": 121.7535, "region": "東部地區"},
+    {"station_id": "467540", "station_name": "臺東", "county": "臺東縣", "town": "臺東市", "lat": 22.7554, "lon": 121.1500, "region": "東部地區"},
     {"station_id": "467350", "station_name": "澎湖", "county": "澎湖縣", "town": "馬公市", "lat": 23.5657, "lon": 119.5898, "region": "澎湖地區"},
+    {"station_id": "467110", "station_name": "金門", "county": "金門縣", "town": "金城鎮", "lat": 24.4340, "lon": 118.3180, "region": "金門地區"},
+    {"station_id": "467990", "station_name": "馬祖", "county": "連江縣", "town": "南竿鄉", "lat": 26.1605, "lon": 119.9499, "region": "馬祖地區"},
 ]
 
 REGION_NAME_MAP = {
@@ -200,6 +214,7 @@ def get_latest_station_observations() -> dict[str, Any]:
                 params={"Authorization": settings.cwa_api_key, "format": "JSON"},
                 headers={"Accept": "application/json", "User-Agent": "CWA-Temperature-Broadcast/1.0"},
                 timeout=10,
+                verify=False,
             )
             response.raise_for_status()
             stations = _parse_observations(response.json())
